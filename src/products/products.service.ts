@@ -84,8 +84,29 @@ export class ProductsService {
         return producto;
     }
 
-    update(id: number, updateProductDto: UpdateProductDto) {
-        return `This action updates a #${id} product`;
+    async update(id: string, updateProductDto: UpdateProductDto): Promise<Product>{
+        try {
+            //* Busca un registro que concuerde con nuestro id y sobreescribe con los datos que tengamos en updateProductDto 
+            const product = await this.productRepository.preload({
+                id: id,
+                ...updateProductDto
+            });
+
+            if(!product) throw new NotFoundException(`El producto con el id: ${id} no ha sido encontrado`);
+
+            return await this.productRepository.save(product);
+
+        } catch (error) {
+            if(error instanceof NotFoundException) throw error;
+
+            if(error.code === "23505"){
+                console.log(error);
+                throw new BadRequestException("No se pudo actualizar el producto, el titulo debe ser único");
+            }
+
+            console.log(error); 
+            throw new InternalServerErrorException("No se pudo actualizar el producto");
+        }
     }
 
     //* Finalizado

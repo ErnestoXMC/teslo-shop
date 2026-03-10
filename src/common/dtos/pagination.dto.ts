@@ -12,6 +12,6 @@ export class PaginationDto {
     offset?: number;
 
     @IsOptional()
-    @IsIn([0, 1], {message: "El parametro isActive debe estar entre 0 y 1"})
+    @IsIn([0, 1], {message: "El parametro isActive debe tener valores entre 0 y 1"})
     isActive?: number;
 }

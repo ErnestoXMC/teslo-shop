@@ -1,4 +1,4 @@
-import {  BeforeInsert, Column, CreateDateColumn, Entity, PrimaryGeneratedColumn, UpdateDateColumn } from "typeorm";
+import {  BeforeInsert, BeforeUpdate, Column, CreateDateColumn, Entity, PrimaryGeneratedColumn, UpdateDateColumn } from "typeorm";
 
 export enum Gender {
     MEN = 'men',
@@ -52,6 +52,12 @@ export class Product {
     })
     gender: Gender;
 
+    @Column('text', {
+        array: true,
+        default: []
+    })
+    tags: string[];
+
     @Column('int', {
         default: 1
     })
@@ -61,6 +67,7 @@ export class Product {
     @CreateDateColumn({name: 'created_at'})
     createdAt: Date;
 
+    //* Se actualiza automaticamente cada que se hace un cambio(save, update)
     @UpdateDateColumn({name: 'updated_at'})
     updatedAt: Date;
 
@@ -71,6 +78,7 @@ export class Product {
 
     //* Pasos previo a la insercion
     @BeforeInsert()
+    @BeforeUpdate()
     sanitizarCampos(){
 
         //* Title
@@ -85,9 +93,8 @@ export class Product {
 
         //* Description
         if(this.description){
-            this.description = this.description.toLowerCase().trim();
+            this.description = this.description.trim();
         }
-
     }
 
 

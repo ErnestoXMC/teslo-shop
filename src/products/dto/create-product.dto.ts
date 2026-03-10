@@ -22,7 +22,7 @@ export class CreateProductDto {
     @IsOptional()
     @IsString({ message: 'El slug debe ser un texto' })
     @MinLength(1, { message: 'El slug no puede estar vacío' })
-    @Matches(/^[a-z0-9-]+$/, { message: 'El slug solo puede contener minúsculas, números y guiones' })
+    @Matches(/^[a-z0-9-_]+$/, { message: 'El slug solo puede contener minúsculas, números y guiones' })
     slug?: string;
 
     @IsOptional()
@@ -36,4 +36,9 @@ export class CreateProductDto {
 
     @IsIn(Object.values(Gender), { message: 'El género no es válido' })
     gender: Gender;
+
+    @IsOptional()
+    @IsString({each: true, message: 'Cada tag debe ser un texto'})
+    @IsArray({message: 'Los tags deben ser un arreglo'})
+    tags?: string[];
 }
