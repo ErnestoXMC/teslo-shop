@@ -1,0 +1,5 @@
+{
+  "DUPLICATE_KEY_VALUE": "There is already a product with the same '{key}': '{value}'",
+  "DUPLICATE_RECORD": "A record with duplicate values already exists.",
+  "UNEXPECTED_ERROR": "Unexpected error, check server logs"
+}
