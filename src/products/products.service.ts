@@ -1,10 +1,12 @@
 import { BadRequestException, Injectable, InternalServerErrorException, Logger, NotFoundException } from '@nestjs/common';
-import { CreateProductDto } from './dto/create-product.dto';
-import { UpdateProductDto } from './dto/update-product.dto';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Product } from './entities/product.entity';
 import { Repository } from 'typeorm';
 import { I18nContext, I18nService } from 'nestjs-i18n';
+import { CreateProductDto } from './dto/create-product.dto';
+import { UpdateProductDto } from './dto/update-product.dto';
+import { Product } from './entities/product.entity';
+import { PaginationDto } from 'src/common/dtos/pagination.dto';
+import {validate as isUUID} from 'uuid';
 
 @Injectable()
 export class ProductsService {
@@ -27,23 +29,56 @@ export class ProductsService {
 
         } catch (error) {
             await this.handleDBExceptions(error);
-            //* Nunca se ejecuta, pero ayuda a inferir a ts que siempre va a retornar un producto o excepcion y nunca undefined
+            //? Nunca se ejecuta, pero ayuda a inferir a ts que siempre va a retornar un producto o excepcion y nunca undefined
             throw error;
         }
     }
 
-    //TODO: Agregar Paginacion
-    async findAll(): Promise<Product[]> {
-        const productos: Product[] = await this.productRepository.find({});
+    //* Sin parametros me trae todos los registros sin importar si estan activos o no
+    //! Es recomendable siempre hacer peticiones con los query parametros
+    async findAll(paginationDto: PaginationDto): Promise<Product[]> {
+
+        const {limit = 10, offset = 0, isActive} = paginationDto;
+
+        //* Objeto para paginacion
+        const findOptions: any = {
+            take: limit,
+            skip: offset,
+            order: {
+                createdAt: 'DESC'
+            }
+        }
+
+        //* Validamos el tipo de isActive y de acuerdo a ello hacemos la condicion
+        if(typeof isActive !== 'undefined' && isActive !== null){
+            findOptions.where = {isActive};
+        }
+
+        const productos: Product[] = await this.productRepository.find(findOptions);
+
         return productos;
     }
 
-    async findOne(id: string): Promise<Product> {
+    async findOne(term: string): Promise<Product> {
 
-        const producto: Product | null = await this.productRepository.findOneBy({id});
+        term = term.toLowerCase().trim();
+
+        let producto: Product | null = null;
+
+        if(isUUID(term)){
+            producto = await this.productRepository.findOneBy({id: term});
+        } else {
+            // producto = await this.productRepository.findOneBy({slug: term});
+            //* Usando queryBuilder (preferible usarlo en consultas complejas)
+            producto = await this.productRepository.createQueryBuilder()
+            .where('slug =:slug', {
+                slug: term
+            })
+            .getOne();;
+        }
 
         if(!producto){
-            throw new NotFoundException(`No se encontró el producto con el id: ${id}`)
+            throw new NotFoundException(`No se encontró el producto con el term: ${term}`)
         }
 
         return producto;

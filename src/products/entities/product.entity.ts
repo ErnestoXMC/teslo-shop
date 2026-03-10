@@ -52,6 +52,11 @@ export class Product {
     })
     gender: Gender;
 
+    @Column('int', {
+        default: 1
+    })
+    isActive: number;
+
     //* Por defecto toma la fecha actual gracias a los decoradores
     @CreateDateColumn({name: 'created_at'})
     createdAt: Date;
