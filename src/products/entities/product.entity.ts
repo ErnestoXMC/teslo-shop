@@ -1,4 +1,5 @@
-import {  BeforeInsert, BeforeUpdate, Column, CreateDateColumn, Entity, PrimaryGeneratedColumn, UpdateDateColumn } from "typeorm";
+import {  BeforeInsert, BeforeUpdate, Column, CreateDateColumn, Entity, OneToMany, PrimaryGeneratedColumn, UpdateDateColumn } from "typeorm";
+import { ProductImage } from "./product-image.entity";
 
 export enum Gender {
     MEN = 'men',
@@ -62,6 +63,17 @@ export class Product {
         default: 1
     })
     isActive: number;
+    
+    //* Relacion de uno a muchos
+    //* 1er campo -> Entidad a quien tenemos la referencia
+    //* 2do campo -> Propiedad de la entidad 
+    //* 3er campo -> Propiedades de accion en nuestra bd (cascade - eliminacion en cascada)
+    @OneToMany(
+        () => ProductImage,
+        productImage => productImage.product,
+        {cascade: true}
+    )
+    images?: ProductImage[];
 
     //* Por defecto toma la fecha actual gracias a los decoradores
     @CreateDateColumn({name: 'created_at'})
@@ -71,12 +83,8 @@ export class Product {
     @UpdateDateColumn({name: 'updated_at'})
     updatedAt: Date;
 
-    //TODO Agregar campos restantes
-    // TAGS
 
-    // IMAGES
-
-    //* Pasos previo a la insercion
+    //* Pasos previo a la insercion y actualizacion
     @BeforeInsert()
     @BeforeUpdate()
     sanitizarCampos(){

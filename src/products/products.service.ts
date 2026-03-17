@@ -2,11 +2,12 @@ import { BadRequestException, Injectable, InternalServerErrorException, Logger, 
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { I18nContext, I18nService } from 'nestjs-i18n';
+import {validate as isUUID} from 'uuid';
+import { Product, ProductImage } from './entities';
 import { CreateProductDto } from './dto/create-product.dto';
 import { UpdateProductDto } from './dto/update-product.dto';
-import { Product } from './entities/product.entity';
 import { PaginationDto } from 'src/common/dtos/pagination.dto';
-import {validate as isUUID} from 'uuid';
+import { ProductResponse } from './interfaces/product-response.interface';
 
 @Injectable()
 export class ProductsService {
@@ -18,14 +19,32 @@ export class ProductsService {
         @InjectRepository(Product)
         private readonly productRepository: Repository<Product>,
 
+        @InjectRepository(ProductImage)
+        private readonly productImageRepository: Repository<ProductImage>,
+
         private readonly i18nService: I18nService,
     ) { }
 
     //* Finalizado
-    async create(createProductDto: CreateProductDto): Promise<Product> {
+    async create(createProductDto: CreateProductDto): Promise<ProductResponse> {
         try {
-            const producto = this.productRepository.create(createProductDto);
-            return await this.productRepository.save(producto);
+
+            //* Desestructuracion del dto
+            const {images = [], ...productProperty} = createProductDto;
+
+            //* Sanitizar nuestros campos
+            const imagesSanitizadas: string[] = images.map(i => i.toLowerCase().trim());
+
+            //* Crear el objeto de producto y de product image nest infiere a que tabla insertar mediante el repositorio y el metodo create
+            const producto = this.productRepository.create({
+                ...productProperty,
+                images: imagesSanitizadas.map(img => this.productImageRepository.create({url: img}))
+            });
+            
+            //* Registrar en nuestra bd
+            await this.productRepository.save(producto);
+
+            return {...producto, images: imagesSanitizadas};
 
         } catch (error) {
             await this.handleDBExceptions(error);
@@ -89,7 +108,8 @@ export class ProductsService {
             //* Busca un registro que concuerde con nuestro id y sobreescribe con los datos que tengamos en updateProductDto 
             const product = await this.productRepository.preload({
                 id: id,
-                ...updateProductDto
+                ...updateProductDto,
+                images: []
             });
 
             if(!product) throw new NotFoundException(`El producto con el id: ${id} no ha sido encontrado`);
