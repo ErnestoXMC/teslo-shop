@@ -14,7 +14,8 @@ export class ProductImage {
     //* Relacion de muchos a uno
     @ManyToOne(
         () => Product,
-        product => product.images
+        product => product.images,
+        {onDelete: 'CASCADE'}
     )
     //* Cambiamos el nombre de nuestro campo solo en caso de relaciones
     @JoinColumn({name: 'product_id'})

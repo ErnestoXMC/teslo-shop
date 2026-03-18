@@ -67,11 +67,12 @@ export class Product {
     //* Relacion de uno a muchos
     //* 1er campo -> Entidad a quien tenemos la referencia
     //* 2do campo -> Propiedad de la entidad 
-    //* 3er campo -> Propiedades de accion en nuestra bd (cascade - eliminacion en cascada)
+    //* 3er campo -> Propiedades de accion en nuestra bd (cascade - agrega y actualiza el valor de las imagenes en su tabla automaticamente), 
+    //* eager carga automaticamente nuestras relaciones, evita hacer joins
     @OneToMany(
         () => ProductImage,
         productImage => productImage.product,
-        {cascade: true}
+        {cascade: true, eager: true}
     )
     images?: ProductImage[];
 

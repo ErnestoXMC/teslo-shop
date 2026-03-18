@@ -1,8 +1,8 @@
 import { BadRequestException, Injectable, InternalServerErrorException, Logger, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { DataSource, Repository } from 'typeorm';
 import { I18nContext, I18nService } from 'nestjs-i18n';
-import {validate as isUUID} from 'uuid';
+import { validate as isUUID } from 'uuid';
 import { Product, ProductImage } from './entities';
 import { CreateProductDto } from './dto/create-product.dto';
 import { UpdateProductDto } from './dto/update-product.dto';
@@ -23,6 +23,8 @@ export class ProductsService {
         private readonly productImageRepository: Repository<ProductImage>,
 
         private readonly i18nService: I18nService,
+
+        private readonly dataSource: DataSource,
     ) { }
 
     //* Finalizado
@@ -30,21 +32,21 @@ export class ProductsService {
         try {
 
             //* Desestructuracion del dto
-            const {images = [], ...productProperty} = createProductDto;
+            const { images = [], ...productProperty } = createProductDto;
 
             //* Sanitizar nuestros campos
-            const imagesSanitizadas: string[] = images.map(i => i.toLowerCase().trim());
+            const imagesTransform: string[] = images.map(i => i.toLowerCase().trim());
 
             //* Crear el objeto de producto y de product image nest infiere a que tabla insertar mediante el repositorio y el metodo create
             const producto = this.productRepository.create({
                 ...productProperty,
-                images: imagesSanitizadas.map(img => this.productImageRepository.create({url: img}))
+                images: imagesTransform.map(img => this.productImageRepository.create({ url: img }))
             });
-            
+
             //* Registrar en nuestra bd
             await this.productRepository.save(producto);
 
-            return {...producto, images: imagesSanitizadas};
+            return { ...producto, images: imagesTransform };
 
         } catch (error) {
             await this.handleDBExceptions(error);
@@ -55,9 +57,9 @@ export class ProductsService {
 
     //* Sin parametros me trae todos los registros sin importar si estan activos o no
     //! Es recomendable siempre hacer peticiones con los query parametros
-    async findAll(paginationDto: PaginationDto): Promise<Product[]> {
+    async findAll(paginationDto: PaginationDto): Promise<ProductResponse[]> {
 
-        const {limit = 10, offset = 0, isActive} = paginationDto;
+        const { limit = 10, offset = 0, isActive } = paginationDto;
 
         //* Objeto para paginacion
         const findOptions: any = {
@@ -69,67 +71,94 @@ export class ProductsService {
         }
 
         //* Validamos el tipo de isActive y de acuerdo a ello hacemos la condicion
-        if(typeof isActive !== 'undefined' && isActive !== null){
-            findOptions.where = {isActive};
+        if (typeof isActive !== 'undefined' && isActive !== null) {
+            findOptions.where = { isActive };
         }
 
         const productos: Product[] = await this.productRepository.find(findOptions);
 
-        return productos;
+        const productsResponse: ProductResponse[] = productos.map(producto => {
+            return this.transformProductResponse(producto);
+        });
+
+        return productsResponse;
     }
 
-    async findOne(term: string): Promise<Product> {
+    async findOne(term: string): Promise<ProductResponse> {
 
         term = term.toLowerCase().trim();
 
         let producto: Product | null = null;
 
-        if(isUUID(term)){
-            producto = await this.productRepository.findOneBy({id: term});
+        if (isUUID(term)) {
+            producto = await this.productRepository.findOne({
+                where: { id: term }
+            });
         } else {
-            // producto = await this.productRepository.findOneBy({slug: term});
-            //* Usando queryBuilder (preferible usarlo en consultas complejas)
-            producto = await this.productRepository.createQueryBuilder()
-            .where('slug =:slug', {
-                slug: term
+            producto = await this.productRepository.findOne({
+                where: { slug: term }
             })
-            .getOne();;
         }
 
-        if(!producto){
-            throw new NotFoundException(`No se encontró el producto con el term: ${term}`)
+        if (!producto) {
+            throw new NotFoundException(`No se encontró el producto con el termino de búsqueda: ${term}`)
         }
 
-        return producto;
+        const productResponse = this.transformProductResponse(producto);
+
+        return productResponse;
     }
 
-    async update(id: string, updateProductDto: UpdateProductDto): Promise<Product>{
+    async update(id: string, updateProductDto: UpdateProductDto): Promise<ProductResponse> {
+
+        const { images, ...propertiesUpdateDto } = updateProductDto;
+
+        //* Busca un registro que concuerde con nuestro id y sobreescribe con los datos que tengamos en propertiesUpdateDto sin images
+        const product = await this.productRepository.preload({
+            id,
+            ...propertiesUpdateDto
+        });
+
+        if (!product) throw new NotFoundException(`El producto con el id: ${id} no ha sido encontrado`);
+
+        //* Creacion de queryRunner (permite realizar transacciones)
+        const queryRunner = this.dataSource.createQueryRunner();
+        await queryRunner.connect();
+        await queryRunner.startTransaction();
+
         try {
-            //* Busca un registro que concuerde con nuestro id y sobreescribe con los datos que tengamos en updateProductDto 
-            const product = await this.productRepository.preload({
-                id: id,
-                ...updateProductDto,
-                images: []
-            });
+            if (images) {
+                //* Eliminamos las imagenes previas, mediante el id del producto
+                await queryRunner.manager.delete(ProductImage, { product: { id } });
+                //* Ingresamos las nuevas imagenes a nuestro obj
+                product.images = images.map(image => this.productImageRepository.create({ url: image }));
+            } else {
+                //* Obtenemos las imagenes previas 
+                product.images = await this.productImageRepository.findBy({ product: { id } })
+            }
 
-            if(!product) throw new NotFoundException(`El producto con el id: ${id} no ha sido encontrado`);
+            //* Guardamos los cambios y finalizamos la transaccion
+            await queryRunner.manager.save(product);
+            await queryRunner.commitTransaction();
 
-            return await this.productRepository.save(product);
+            return this.transformProductResponse(product);
 
         } catch (error) {
-            if(error instanceof NotFoundException) throw error;
+            await queryRunner.rollbackTransaction();
 
-            if(error.code === "23505"){
+            if (error.code === "23505") {
                 console.log(error);
                 throw new BadRequestException("No se pudo actualizar el producto, el titulo debe ser único");
             }
 
-            console.log(error); 
+            console.log(error);
             throw new InternalServerErrorException("No se pudo actualizar el producto");
+        } finally {
+            //* Liberamos siempre la conexion
+            await queryRunner.release();
         }
     }
 
-    //* Finalizado
     async remove(id: string): Promise<void> {
         try {
             const { affected } = await this.productRepository.delete(id);
@@ -139,11 +168,20 @@ export class ProductsService {
             }
 
         } catch (error) {
-            if(error instanceof NotFoundException) throw error;
+            if (error instanceof NotFoundException) throw error;
 
             console.log(error);
             throw new InternalServerErrorException("No se pudo eliminar el producto");
         }
+    }
+
+    //* Metodo para transformar la respuesta de nuestras peticiones
+    private transformProductResponse(producto: Product): ProductResponse {
+        const { images = [], ...productProperties } = producto;
+
+        const imagesTransform: string[] = images.map(i => i.url);
+
+        return { ...productProperties, images: imagesTransform };
     }
 
     private async handleDBExceptions(error: any) {
