@@ -8,6 +8,13 @@ export enum Gender {
     KID = 'kid'
 }
 
+export enum TypeProduct {
+    SHIRTS = 'shirts',
+    PANTS = 'pants',
+    HOODIES = 'hoodies',
+    HATS = 'hats'
+}
+
 @Entity('products')
 export class Product {
 
@@ -58,6 +65,12 @@ export class Product {
         default: []
     })
     tags: string[];
+
+    @Column({
+        type: 'enum',
+        enum: TypeProduct
+    })
+    type: string;
 
     @Column('int', {
         default: 1

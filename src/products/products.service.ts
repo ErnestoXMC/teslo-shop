@@ -27,7 +27,6 @@ export class ProductsService {
         private readonly dataSource: DataSource,
     ) { }
 
-    //* Finalizado
     async create(createProductDto: CreateProductDto): Promise<ProductResponse> {
         try {
 
@@ -175,8 +174,8 @@ export class ProductsService {
         }
     }
 
-    async deleteAll(): Promise<void>{
-        if(process.env.NODE_ENV === "production"){
+    async deleteAll(): Promise<void> {
+        if (process.env.NODE_ENV === "production") {
             throw new InternalServerErrorException("Método eliminar todos los productos no permitido en producción");
         }
         try {
@@ -186,6 +185,32 @@ export class ProductsService {
             throw new InternalServerErrorException("No se pudo eliminar todos los productos");
         }
     }
+
+    async createAll(productsSeed): Promise<ProductResponse[]> {
+        try {
+            const productosToSave = productsSeed.map(productSeed => {
+                const { images = [], ...productProperty } = productSeed;
+                const imagesTransform = images.map(i => i.toLowerCase().trim());
+
+                return this.productRepository.create({
+                    ...productProperty,
+                    images: imagesTransform.map(img => this.productImageRepository.create({ url: img }))
+                });
+            });
+
+            const savedProducts = await this.productRepository.save(productosToSave);
+
+            return savedProducts.map(producto => ({
+                ...producto,
+                images: producto.images?.map(img => img.url) ?? []
+            }));
+
+        } catch (error) {
+            await this.handleDBExceptions(error);
+            throw error;
+        }
+    }
+
 
     //* Metodo para transformar la respuesta de nuestras peticiones
     private transformProductResponse(producto: Product): ProductResponse {

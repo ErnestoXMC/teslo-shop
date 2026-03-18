@@ -1,5 +1,5 @@
 import { IsArray, IsIn, IsInt, IsNumber, IsOptional, IsString, Matches, MaxLength, Min, MinLength } from "class-validator";
-import { Gender } from "../entities/product.entity";
+import { Gender, TypeProduct } from "../entities/product.entity";
 
 export class CreateProductDto {
 
@@ -41,6 +41,9 @@ export class CreateProductDto {
     @IsString({each: true, message: 'Cada tag debe ser un texto'})
     @IsArray({message: 'Los tags deben ser un arreglo'})
     tags?: string[];
+
+    @IsIn(Object.values(TypeProduct), { message: 'El tipo no es válido' })
+    type: string;
     
     @IsOptional()
     @IsString({each: true, message: 'Cada imagen debe ser un texto'})
