@@ -26,11 +26,11 @@ export class ProductsController {
     }
 
     @Patch(':id')
-    update(
+    async update(
         @Param('id', ParseUUIDPipe) id: string, 
         @Body() updateProductDto: UpdateProductDto
     ) {
-        return this.productsService.update(id, updateProductDto);
+        return await this.productsService.update(id, updateProductDto);
     }
 
     @Delete(':id')

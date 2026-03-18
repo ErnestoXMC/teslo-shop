@@ -10,6 +10,10 @@ import { Product, ProductImage } from './entities';
     imports: [
         //* Declarar nuestras entidades para inyectar sus repositorios en nuestros servicios
         TypeOrmModule.forFeature([Product, ProductImage])
+    ],
+    exports: [
+        ProductsService,
+        TypeOrmModule //* Solo en caso se requiera usar los repositorios de Product y ProductImage
     ]
 })
 export class ProductsModule { }

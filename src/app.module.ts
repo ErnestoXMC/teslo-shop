@@ -4,6 +4,7 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { ProductsModule } from './products/products.module';
 import { AcceptLanguageResolver, I18nJsonLoader, I18nModule } from 'nestjs-i18n';
 import { CommonModule } from './common/common.module';
+import { SeedModule } from './seed/seed.module';
 
 @Module({
     imports: [
@@ -42,7 +43,8 @@ import { CommonModule } from './common/common.module';
 
         //* Modulos Generales
         ProductsModule,
-        CommonModule
+        CommonModule,
+        SeedModule
     ]
 })
 export class AppModule { }

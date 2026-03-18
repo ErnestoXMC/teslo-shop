@@ -177,7 +177,7 @@ export class ProductsService {
 
     async deleteAll(): Promise<void>{
         if(process.env.NODE_ENV === "production"){
-            throw new InternalServerErrorException("Método eliminar todo no permitido en producción");
+            throw new InternalServerErrorException("Método eliminar todos los productos no permitido en producción");
         }
         try {
             await this.productRepository.deleteAll();
