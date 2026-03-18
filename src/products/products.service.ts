@@ -175,6 +175,18 @@ export class ProductsService {
         }
     }
 
+    async deleteAll(): Promise<void>{
+        if(process.env.NODE_ENV === "production"){
+            throw new InternalServerErrorException("Método eliminar todo no permitido en producción");
+        }
+        try {
+            await this.productRepository.deleteAll();
+        } catch (error) {
+            console.log(error);
+            throw new InternalServerErrorException("No se pudo eliminar todos los productos");
+        }
+    }
+
     //* Metodo para transformar la respuesta de nuestras peticiones
     private transformProductResponse(producto: Product): ProductResponse {
         const { images = [], ...productProperties } = producto;
