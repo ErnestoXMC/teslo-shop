@@ -5,6 +5,7 @@ import { ProductsModule } from './products/products.module';
 import { AcceptLanguageResolver, I18nJsonLoader, I18nModule } from 'nestjs-i18n';
 import { CommonModule } from './common/common.module';
 import { SeedModule } from './seed/seed.module';
+import { AuthModule } from './auth/auth.module';
 
 @Module({
     imports: [
@@ -44,7 +45,8 @@ import { SeedModule } from './seed/seed.module';
         //* Modulos Generales
         ProductsModule,
         CommonModule,
-        SeedModule
+        SeedModule,
+        AuthModule
     ]
 })
 export class AppModule { }

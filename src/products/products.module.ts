@@ -13,7 +13,7 @@ import { Product, ProductImage } from './entities';
     ],
     exports: [
         ProductsService,
-        TypeOrmModule //* Solo en caso se requiera usar los repositorios de Product y ProductImage
+        TypeOrmModule //* Solo en caso se requiera usar los repositorios de Product y ProductImage en otros modulos
     ]
 })
 export class ProductsModule { }
