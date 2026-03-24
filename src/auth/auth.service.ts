@@ -5,8 +5,8 @@ import { Repository } from 'typeorm';
 import * as bcrypt from "bcrypt";
 import { CreateUserDto, LoginUserDto } from './dto';
 import { JwtPayload } from './interfaces/jwt-payload.interface';
-import { JwtStrategy } from './strategies/jwt.strategy';
 import { JwtService } from '@nestjs/jwt';
+import { TokenResponse } from './interfaces/auth-response.interface';
 
 @Injectable()
 export class AuthService {
@@ -18,7 +18,7 @@ export class AuthService {
         private readonly JwtService: JwtService,
     ){}
 
-    async create(createUserDto: CreateUserDto) {
+    async create(createUserDto: CreateUserDto): Promise<TokenResponse> {
         try {
             const {password, ...userData} = createUserDto;
 
@@ -31,7 +31,6 @@ export class AuthService {
             await this.userRepository.save(user);
 
             return {
-                ...user,
                 token: this.generateJwt({email: user.email})
             }
 
@@ -44,7 +43,7 @@ export class AuthService {
         }
     }
 
-    async loginUser(loginUserDto: LoginUserDto){
+    async loginUser(loginUserDto: LoginUserDto): Promise<TokenResponse>{
 
         const {password, email } = loginUserDto;
 
@@ -61,7 +60,6 @@ export class AuthService {
             throw new UnauthorizedException("La contraseña es incorrecta");
 
         return {
-            ...user,
             token: this.generateJwt({email: user.email})
         };
     }

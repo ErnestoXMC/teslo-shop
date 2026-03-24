@@ -14,6 +14,7 @@ export class JwtStrategy extends PassportStrategy(Strategy){
         @InjectRepository(User)
         private readonly userRepository: Repository<User>,
 
+        //TODO: Cambiarlo y volerlo private readonly
         configService: ConfigService
     ){
         super({
