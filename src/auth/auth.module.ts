@@ -22,7 +22,7 @@ import { JwtStrategy } from './strategies/jwt.strategy';
         //* Definimos como se autenticaran los usuarios, en este caso JWT
         PassportModule.register({ defaultStrategy: 'jwt' }),
 
-        //* Configuracion asincrona de nuestro jwt para obtener nuestra variable de entorno
+        //* Configuracion asincrona de nuestro jwt y poder usarlo en nuestro servicio
         JwtModule.registerAsync({
             imports: [ConfigModule],
             inject: [ConfigService],

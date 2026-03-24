@@ -4,13 +4,18 @@ import { User } from './entities/user.entity';
 import { Repository } from 'typeorm';
 import * as bcrypt from "bcrypt";
 import { CreateUserDto, LoginUserDto } from './dto';
+import { JwtPayload } from './interfaces/jwt-payload.interface';
+import { JwtStrategy } from './strategies/jwt.strategy';
+import { JwtService } from '@nestjs/jwt';
 
 @Injectable()
 export class AuthService {
 
     constructor(
         @InjectRepository(User)
-        private readonly userRepository: Repository<User>
+        private readonly userRepository: Repository<User>,
+
+        private readonly JwtService: JwtService,
     ){}
 
     async create(createUserDto: CreateUserDto) {
@@ -23,9 +28,12 @@ export class AuthService {
                 password: bcrypt.hashSync(password, 10)
             })
 
-            return await this.userRepository.save(user);
+            await this.userRepository.save(user);
 
-            //TODO: Retornar JWT
+            return {
+                ...user,
+                token: this.generateJwt({email: user.email})
+            }
 
         } catch (error) {
             if(error.code === "23505")
@@ -52,9 +60,15 @@ export class AuthService {
         if(!bcrypt.compareSync(password, user.password))
             throw new UnauthorizedException("La contraseña es incorrecta");
 
-        return user;
-        //TODO: Retornar JWT
+        return {
+            ...user,
+            token: this.generateJwt({email: user.email})
+        };
+    }
 
+    private generateJwt(payload: JwtPayload): string{
+        const token = this.JwtService.sign(payload);
+        return token;
     }
 
 }
