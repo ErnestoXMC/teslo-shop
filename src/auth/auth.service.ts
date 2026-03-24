@@ -28,7 +28,6 @@ export class AuthService {
             //TODO: Retornar JWT
 
         } catch (error) {
-            
             if(error.code === "23505")
                 throw new BadRequestException("El email ya se encuentra registrado")
 
