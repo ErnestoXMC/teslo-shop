@@ -1,9 +1,10 @@
-import { Controller, Get, Post, Body, UseGuards, Req } from '@nestjs/common';
+import { Controller, Get, Post, Body, UseGuards, Headers } from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
 import { AuthService } from './auth.service';
-import { CreateUserDto, LoginUserDto } from './dto';
-import { GetUser } from './decorators/get-user.decorator';
 import { User } from './entities/user.entity';
+import { CreateUserDto, LoginUserDto } from './dto';
+import { RawHeaders, GetUser } from './decorators';
+import type { IncomingHttpHeaders } from 'http';
 
 @Controller('auth')
 export class AuthController {
@@ -25,10 +26,19 @@ export class AuthController {
     testingPrivateRoute(
         //* Despues del guard obtenemos los datos del usuario desde la request
         //* Si le pasamos alguna data como parametro de nuestro decorador, accederemos a este mediante data
-        @GetUser() user: User
+        //* Los decoradores usualmente toman un parametro o no toman ninguno, pero en este caso tenemos la opcion de mandar varios parametros mediante un arreglo ['email', 'roles']
+        @GetUser() user: User,
+        @GetUser('email') userEmail: string,
+        @GetUser(['email', 'fullName']) userEmailFullName: string,
+        @RawHeaders() rawHeader: string[],
+        @Headers() headers: IncomingHttpHeaders, //* Similar a nuestro rawheader, usar este decorador
     ){
         return {
-            user
+            user,
+            userEmail,
+            userEmailFullName,
+            rawHeader,
+            headers
         }
     }
 }
