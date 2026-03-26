@@ -28,10 +28,10 @@ export class AuthService {
                 password: bcrypt.hashSync(password, 10)
             })
 
-            await this.userRepository.save(user);
+            const userSaved = await this.userRepository.save(user);
 
             return {
-                token: this.generateJwt({email: user.email})
+                token: this.generateJwt({id: userSaved.id})
             }
 
         } catch (error) {
@@ -49,7 +49,7 @@ export class AuthService {
 
         const user = await this.userRepository.findOne({
             where: {email},
-            select: {email: true, password: true},
+            select: {email: true, password: true, id: true},
         })
 
         //* Excepcion en caso el usuario no existe
@@ -60,7 +60,7 @@ export class AuthService {
             throw new UnauthorizedException("La contraseña es incorrecta");
 
         return {
-            token: this.generateJwt({email: user.email})
+            token: this.generateJwt({id: user.id})
         };
     }
 

@@ -24,6 +24,7 @@ import { JwtStrategy } from './strategies/jwt.strategy';
 
         //* Configuracion asincrona de nuestro jwt y poder usarlo en nuestro servicio
         JwtModule.registerAsync({
+            // global: true, //* Ponerlo de forma global solo en caso que otros modulos firmen o generen un jwt
             imports: [ConfigModule],
             inject: [ConfigService],
             useFactory: (configService: ConfigService) => {

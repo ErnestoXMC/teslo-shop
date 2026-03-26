@@ -1,7 +1,9 @@
-import { Controller, Get, Post, Body, UseGuards } from '@nestjs/common';
+import { Controller, Get, Post, Body, UseGuards, Req } from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
 import { AuthService } from './auth.service';
 import { CreateUserDto, LoginUserDto } from './dto';
+import { GetUser } from './decorators/get-user.decorator';
+import { User } from './entities/user.entity';
 
 @Controller('auth')
 export class AuthController {
@@ -20,10 +22,13 @@ export class AuthController {
     //* AuthGuard() usa la estrategia configurada en el passport (jwt)
     @Get('private')
     @UseGuards(AuthGuard())
-    testingPrivateRoute(){
+    testingPrivateRoute(
+        //* Despues del guard obtenemos los datos del usuario desde la request
+        //* Si le pasamos alguna data como parametro de nuestro decorador, accederemos a este mediante data
+        @GetUser() user: User
+    ){
         return {
-            ok: true,
-            message: "Esta ruta es privada, hola!"
+            user
         }
     }
 }
