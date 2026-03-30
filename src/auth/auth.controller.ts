@@ -21,6 +21,15 @@ export class AuthController {
         return await this.authService.loginUser(loginUserDto);
     } 
 
+    //* Permite renovar el jwt
+    @Get('check-status')
+    @Auth()
+    async checkStatus(
+        @GetUser() user: User
+    ){
+        return await this.authService.checkStatus(user);
+    }
+
     //* AuthGuard() usa la estrategia configurada en el passport (jwt)
     @Get('private')
     @UseGuards(AuthGuard())
