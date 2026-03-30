@@ -1,5 +1,6 @@
-import {  BeforeInsert, BeforeUpdate, Column, CreateDateColumn, Entity, OneToMany, PrimaryGeneratedColumn, UpdateDateColumn } from "typeorm";
+import {  BeforeInsert, BeforeUpdate, Column, CreateDateColumn, Entity, JoinColumn, ManyToOne, OneToMany, PrimaryGeneratedColumn, UpdateDateColumn } from "typeorm";
 import { ProductImage } from "./product-image.entity";
+import { User } from "src/auth/entities/user.entity";
 
 export enum Gender {
     MEN = 'men',
@@ -88,6 +89,15 @@ export class Product {
         {cascade: true, eager: true}
     )
     images?: ProductImage[];
+
+    //* Relacion con usuario
+    @ManyToOne(
+        () => User,
+        (user) => user.product,
+        {eager: true}
+    )
+    @JoinColumn({name: 'user_id'})
+    user: User;
 
     //* Por defecto toma la fecha actual gracias a los decoradores
     @CreateDateColumn({name: 'created_at'})

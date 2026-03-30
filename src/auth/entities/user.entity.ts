@@ -1,4 +1,5 @@
-import { BeforeInsert, BeforeUpdate, Column, CreateDateColumn, Entity, PrimaryGeneratedColumn, UpdateDateColumn } from "typeorm";
+import { Product } from "src/products/entities";
+import { BeforeInsert, BeforeUpdate, Column, CreateDateColumn, Entity, OneToMany, PrimaryGeneratedColumn, UpdateDateColumn } from "typeorm";
 
 @Entity('users')
 export class User {
@@ -32,6 +33,14 @@ export class User {
         default: true
     })
     isActive: boolean;
+
+    //* Relacion con productos
+    @OneToMany(
+        () => Product,
+        (product) => product.user,
+        
+    )
+    product: Product;
 
     @CreateDateColumn({name: 'created_at'})
     createdAt: Date;

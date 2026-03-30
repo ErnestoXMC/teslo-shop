@@ -8,6 +8,7 @@ import { CreateProductDto } from './dto/create-product.dto';
 import { UpdateProductDto } from './dto/update-product.dto';
 import { PaginationDto } from 'src/common/dtos/pagination.dto';
 import { ProductResponse } from './interfaces/product-response.interface';
+import { User } from 'src/auth/entities/user.entity';
 
 @Injectable()
 export class ProductsService {
@@ -22,12 +23,19 @@ export class ProductsService {
         @InjectRepository(ProductImage)
         private readonly productImageRepository: Repository<ProductImage>,
 
+        @InjectRepository(User)
+        private readonly userRepository: Repository<User>,
+
         private readonly i18nService: I18nService,
 
         private readonly dataSource: DataSource,
     ) { }
 
-    async create(createProductDto: CreateProductDto): Promise<ProductResponse> {
+    async create(createProductDto: CreateProductDto, user: User): Promise<ProductResponse> {
+
+        // console.log(user)
+
+
         try {
 
             //* Desestructuracion del dto
@@ -39,7 +47,8 @@ export class ProductsService {
             //* Crear el objeto de producto y de product image nest infiere a que tabla insertar mediante el repositorio y el metodo create
             const producto = this.productRepository.create({
                 ...productProperty,
-                images: imagesTransform.map(img => this.productImageRepository.create({ url: img }))
+                images: imagesTransform.map(img => this.productImageRepository.create({ url: img })),
+                user
             });
 
             //* Registrar en nuestra bd
@@ -108,7 +117,7 @@ export class ProductsService {
         return productResponse;
     }
 
-    async update(id: string, updateProductDto: UpdateProductDto): Promise<ProductResponse> {
+    async update(id: string, updateProductDto: UpdateProductDto, user: User): Promise<ProductResponse> {
 
         const { images, ...propertiesUpdateDto } = updateProductDto;
 
@@ -135,6 +144,8 @@ export class ProductsService {
                 //* Obtenemos las imagenes previas 
                 product.images = await this.productImageRepository.findBy({ product: { id } })
             }
+
+            product.user = user
 
             //* Guardamos los cambios y finalizamos la transaccion
             await queryRunner.manager.save(product);
