@@ -6,14 +6,19 @@ import { PaginationDto } from 'src/common/dtos/pagination.dto';
 import { Auth, GetUser } from 'src/auth/decorators';
 import { ValidRoles } from 'src/auth/interfaces/valid-roles.interfaces';
 import { User } from 'src/auth/entities/user.entity';
+import { ApiResponse } from '@nestjs/swagger';
+import { Product } from './entities';
+import { ApiCreate } from 'src/common/decorators/api-create.decorator';
 
 @Controller('products')
 @Auth()
+@ApiResponse({status: 500, description: "Error interno en el sistema"})
 export class ProductsController {
     constructor(private readonly productsService: ProductsService) { }
 
     @Post()
     @Auth(ValidRoles.admin)
+    @ApiCreate(Product, "Producto")
     async create(
         @Body() createProductDto: CreateProductDto,
         @GetUser() user: User
